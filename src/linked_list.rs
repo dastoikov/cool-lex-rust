@@ -50,7 +50,7 @@ pub struct Algorithm {
 impl Algorithm {
 	/// Param <tt>s</tt>: the number of <tt>0</tt>-bits.
 	///
-	/// Param <tt>t</tt>: the number of <tt>1</tt>-bits. Must be <tt>0</tt>.
+	/// Param <tt>t</tt>: the number of <tt>1</tt>-bits. Must be <tt> >0</tt>.
 	pub fn new(s: usize, t: usize) -> Self {
 		let b: NonNull<Node> = new_node!(true);
 		let mut x = b;
