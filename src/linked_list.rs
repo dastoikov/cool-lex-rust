@@ -109,15 +109,15 @@ fn new_node_next_to(curr: NonNull<Node>, val: bool) -> NonNull<Node> {
 
 /// Iterator over the selected indices.
 pub struct SelInd {
-	alg: *const Algorithm,
 	curr: NonNull<Node>,
+	dangling: NonNull<Node>,
 	i: usize,
 }
 impl SelInd {
-	fn new(alg: *const Algorithm) -> Self {
+	fn new(alg: &Algorithm) -> Self {
 		SelInd {
-			alg,
-			curr: unsafe { (*alg).b },
+			curr: alg.b,
+			dangling: alg.dangling,
 			i: 0,
 		}
 	}
@@ -126,7 +126,7 @@ impl Iterator for SelInd {
 	type Item = usize;
 	fn next(&mut self) -> Option<Self::Item> {
 		loop {
-			if unsafe { (*self.alg).dangling } == self.curr {
+			if self.dangling == self.curr {
 				break None;
 			}
 			if val_of!(self.curr) {
