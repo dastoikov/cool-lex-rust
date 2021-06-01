@@ -26,6 +26,9 @@ macro_rules! val_of {
 		unsafe { (*$ptr.as_ptr()).val }
 	}};
 }
+
+// "next" of a node that does not have a next node
+const PAST_END: NonNull<Node> = NonNull::dangling();
 // An element in the cool-lex LinkedList algorithm
 struct Node {
 	next: NonNull<Node>,
@@ -34,7 +37,7 @@ struct Node {
 impl Node {
 	fn new(val: bool) -> Self {
 		Node {
-			next: NonNull::dangling(),
+			next: PAST_END,
 			val,
 		}
 	}
@@ -44,14 +47,15 @@ pub struct Algorithm {
 	// var names -> as found in the paper, for better understanding of the code here
 	b: NonNull<Node>, // the head of the list; this is the node with the greatest "index"
 	x: NonNull<Node>, // the first node, right-to-left, whose value is 1 and whose predecessor's value is 0
-
-	dangling: NonNull<Node>, // "next" of a node that does not have a next node
 }
 impl Algorithm {
 	/// Param <tt>s</tt>: the number of <tt>0</tt>-bits.
 	///
 	/// Param <tt>t</tt>: the number of <tt>1</tt>-bits. Must be <tt> >0</tt>.
+	///
+	/// Panics if <tt>t<=0</tt>.
 	pub fn new(s: usize, t: usize) -> Self {
+		assert!(t > 0);
 		let b: NonNull<Node> = new_node!(true);
 		let mut x = b;
 		for _ in 1..t {
@@ -61,11 +65,7 @@ impl Algorithm {
 		for _ in 0..s {
 			last = new_node_next_to(last, false);
 		}
-		Algorithm {
-			b,
-			x,
-			dangling: next_of!(last),
-		}
+		Algorithm { b, x }
 	}
 	#[allow(unused_unsafe)]
 	pub fn next_combination(&mut self) {
@@ -79,7 +79,7 @@ impl Algorithm {
 		}
 	}
 	pub fn has_more(&self) -> bool {
-		next_of!(self.x) != self.dangling
+		next_of!(self.x) != PAST_END
 	}
 }
 impl Display for Algorithm {
@@ -94,7 +94,7 @@ impl Display for Algorithm {
 			}
 
 			curr = next_of!(curr);
-			if self.dangling == curr {
+			if PAST_END == curr {
 				break Result::Ok(());
 			}
 		}
@@ -107,26 +107,29 @@ fn new_node_next_to(curr: NonNull<Node>, val: bool) -> NonNull<Node> {
 	next
 }
 
-/// Iterator over the selected indices.
+/// Iterator over the indices selected for the current combination.
+///
+/// Example:
+///
+/// <pre>
+/// combination:      1101001
+///                   ^^ ^  ^
+/// iterator yields:  01 3  6
+/// </pre>
 pub struct SelInd {
 	curr: NonNull<Node>,
-	dangling: NonNull<Node>,
 	i: usize,
 }
 impl SelInd {
 	fn new(alg: &Algorithm) -> Self {
-		SelInd {
-			curr: alg.b,
-			dangling: alg.dangling,
-			i: 0,
-		}
+		SelInd { curr: alg.b, i: 0 }
 	}
 }
 impl Iterator for SelInd {
 	type Item = usize;
 	fn next(&mut self) -> Option<Self::Item> {
 		loop {
-			if self.dangling == self.curr {
+			if PAST_END == self.curr {
 				break None;
 			}
 			if val_of!(self.curr) {
