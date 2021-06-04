@@ -116,16 +116,16 @@ fn new_node_next_to(curr: NonNull<Node>, val: bool) -> NonNull<Node> {
 ///                   ^^ ^  ^
 /// iterator yields:  01 3  6
 /// </pre>
-pub struct SelInd {
+pub struct SelectedIndicesIterator {
 	curr: NonNull<Node>,
 	i: usize,
 }
-impl SelInd {
+impl SelectedIndicesIterator {
 	fn new(alg: &Algorithm) -> Self {
-		SelInd { curr: alg.b, i: 0 }
+		SelectedIndicesIterator { curr: alg.b, i: 0 }
 	}
 }
-impl Iterator for SelInd {
+impl Iterator for SelectedIndicesIterator {
 	type Item = usize;
 	fn next(&mut self) -> Option<Self::Item> {
 		loop {
@@ -145,21 +145,28 @@ impl Iterator for SelInd {
 	}
 }
 
-// Helper taking care of iterator technicalities.
+// Iterator over the combinations.
 struct Combinations {
 	alg: Algorithm,
-	iter_next: fn(&mut Combinations) -> Option<SelInd>, // function serving as iterator.next()
+	iter_next: fn(&mut Combinations) -> Option<SelectedIndicesIterator>, // serves as iterator.next()
 }
+
 impl Combinations {
+	fn new(alg: Algorithm) -> Self {
+		Combinations {
+			alg,
+			iter_next: Combinations::iter_entry,
+		}
+	}
 	// handles the initial invocation of iterator.next()
-	fn iter_first_combination(&mut self) -> Option<SelInd> {
-		Some(SelInd::new(&self.alg))
+	fn iter_first_combination(&mut self) -> Option<SelectedIndicesIterator> {
+		Some(SelectedIndicesIterator::new(&self.alg))
 	}
 	// handles subsequent invocations of iterator.next()
-	fn iter_next_combination(&mut self) -> Option<SelInd> {
+	fn iter_next_combination(&mut self) -> Option<SelectedIndicesIterator> {
 		if self.alg.has_more() {
 			self.alg.next_combination();
-			Some(SelInd::new(&self.alg))
+			Some(SelectedIndicesIterator::new(&self.alg))
 		} else {
 			None
 		}
@@ -167,15 +174,15 @@ impl Combinations {
 	// the entry point of iterator.next():
 	// chains iter_first_combination and iter_next_combination,
 	// which is necessary as the algorithm is initially set to the first combination.
-	fn iter_entry(&mut self) -> Option<SelInd> {
+	fn iter_entry(&mut self) -> Option<SelectedIndicesIterator> {
 		let iter_first = Combinations::iter_first_combination;
 		self.iter_next = Combinations::iter_next_combination;
 		iter_first(self)
 	}
 }
-impl Iterator for Combinations {
-	type Item = SelInd;
 
+impl Iterator for Combinations {
+	type Item = SelectedIndicesIterator;
 	fn next(&mut self) -> Option<Self::Item> {
 		(self.iter_next)(self)
 	}
@@ -202,16 +209,13 @@ impl CoollexLinkedList {
 	/// Returns an empty iterator if <tt>0</tt> was specified as the number of elements in a
 	/// combination; the generated combinations otherwise, as an iterator over iterators over indices.
 	///
-	/// Panics if <tt>k < 0 || n < k</tt>
-	pub fn combinations(n: usize, k: usize) -> Box<dyn Iterator<Item = SelInd>> {
+	/// Panics if <tt>n < k</tt>
+	pub fn combinations(n: usize, k: usize) -> Box<dyn Iterator<Item = SelectedIndicesIterator>> {
 		assert!( n>=k,"number of elements to combine is less than the number of elements in a combination: n={}, k={}",n,k);
 		if k != 0 {
-			Box::new(Combinations {
-				alg: Algorithm::new(n - k, k),
-				iter_next: Combinations::iter_entry,
-			})
+			Box::new(Combinations::new(Algorithm::new(n - k, k)))
 		} else {
-			Box::new(empty::<SelInd>())
+			Box::new(empty::<SelectedIndicesIterator>())
 		}
 	}
 }
