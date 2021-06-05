@@ -43,12 +43,13 @@ mod tests {
         test_linked_list(15, 6);
     }
     fn test_linked_list(n: usize, k: usize) {
+        // value at given index denotes how many times this element appeared in a combination
         let mut hits = vec![0; n];
 
-        let cool_lex = CoollexLinkedList::combinations(n, k);
-        let mut num_comb = 0;
-        for comb in cool_lex {
-            let mut num_elem = 0;
+        let combs = CoollexLinkedList::combinations(n, k);
+        let mut num_comb = 0; // total number of combinations yielded by the algorithm
+        for comb in combs {
+            let mut num_elem = 0; // number of elements in this combination
             for i in comb {
                 hits[i] += 1;
                 num_elem += 1;
