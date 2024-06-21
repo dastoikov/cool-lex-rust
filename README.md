@@ -7,11 +7,4 @@ The code in this repository is authored by the cool-lex-rust [contributors](CONT
 
 ## Development
 
-On the map:
-
-* Adding more algorithms.
-* Improving the performance of the LinkedList algorithm implementation.
-
-Other ideas:
-
-* Publish crate.
+Not planned.
